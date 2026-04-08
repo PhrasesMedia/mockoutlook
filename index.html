@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mock Mail & Calendar</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --panel: #ffffff;
+      --panel-2: #f8fafc;
+      --line: #dbe3ef;
+      --text: #17202f;
+      --muted: #637188;
+      --blue: #0f6cbd;
+      --blue-2: #e8f2fc;
+      --blue-3: #cfe5fb;
+      --shadow: 0 10px 30px rgba(15, 35, 75, 0.12);
+      --red-bg: #feecec;
+      --red-text: #b42318;
+      --green-bg: #eaf8ef;
+      --green-text: #137333;
+      --amber-bg: #fff4d6;
+      --amber-text: #946200;
+      --purple-bg: #f4ebff;
+      --purple-text: #6e3cbc;
+      --sent-bg: #eef2f7;
+      --sent-text: #475467;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    button, input, textarea, select { font: inherit; }
+
+    .app {
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 72px 1fr;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 18px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .menu-btn {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 12px;
+      cursor: pointer;
+      color: var(--text);
+    }
+
+    .logo {
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      background: var(--blue);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: bold;
+      font-size: 18px;
+      box-shadow: var(--shadow);
+      flex: 0 0 auto;
+    }
+
+    .brand-text .title {
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .brand-text .sub {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 2px;
+    }
+
+    .search {
+      flex: 1;
+      max-width: 720px;
+      position: relative;
+    }
+
+    .search input {
+      width: 100%;
+      height: 44px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      padding: 0 14px 0 42px;
+      outline: none;
+    }
+
+    .search input:focus {
+      background: #fff;
+      border-color: #98c3ef;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 15px;
+      pointer-events: none;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      color: var(--muted);
+    }
+
+    .icon-btn:hover { background: #eef3f9; }
+    .view-btn-active { background: var(--blue-2); color: var(--blue); }
+
+    .profile {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 16px;
+      padding: 6px 10px;
+    }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: #1f2937;
+      color: white;
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .layout {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 260px 360px 1fr;
+    }
+
+    .hidden { display: none !important; }
+
+    .sidebar, .list, .reader { min-height: 0; }
+
+    .sidebar {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .compose-btn {
+      width: 100%;
+      border: 0;
+      background: var(--blue);
+      color: white;
+      padding: 14px 16px;
+      border-radius: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    .folder-list {
+      display: grid;
+      gap: 6px;
+    }
+
+    .folder-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: left;
+    }
+
+    .folder-item:hover { background: #f4f7fb; }
+    .folder-item.active {
+      background: var(--blue-2);
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .folder-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge-count {
+      min-width: 24px;
+      height: 24px;
+      padding: 0 8px;
+      border-radius: 999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #eef2f7;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .storage {
+      margin-top: 20px;
+      padding: 16px;
+      background: var(--panel-2);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+    }
+
+    .storage-title { font-weight: 700; font-size: 14px; }
+    .storage-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .bar { height: 10px; background: #e5edf7; border-radius: 999px; overflow: hidden; margin-top: 12px; }
+    .bar > span { display: block; width: 56%; height: 100%; background: var(--blue); }
+
+    .list {
+      background: var(--panel);
+      border-right: 1px solid var(--line);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .list-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .list-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+
+    .list-sub { color: var(--muted); font-size: 12px; }
+    .list-actions { display: flex; gap: 6px; }
+    .messages { overflow: auto; }
+
+    .message-item {
+      width: 100%;
+      border: 0;
+      border-bottom: 1px solid #edf2f7;
+      background: #fff;
+      text-align: left;
+      padding: 16px;
+      cursor: pointer;
+    }
+
+    .message-item:hover { background: #f9fbfd; }
+    .message-item.active { background: var(--blue-2); }
+
+    .row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .sender {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--blue);
+      flex: 0 0 auto;
+    }
+
+    .sender-name, .subject {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sender-name.unread, .subject.unread { font-weight: 700; color: var(--text); }
+    .sender-name.read, .subject.read { color: #344054; }
+    .time { color: #98a2b3; font-size: 12px; flex: 0 0 auto; }
+
+    .preview {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+      line-height: 1.45;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .message-foot {
+      margin-top: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .pill.important { background: var(--red-bg); color: var(--red-text); }
+    .pill.work { background: var(--blue-2); color: var(--blue); }
+    .pill.newsletter { background: var(--amber-bg); color: var(--amber-text); }
+    .pill.sent { background: var(--sent-bg); color: var(--sent-text); }
+    .pill.draft { background: var(--purple-bg); color: var(--purple-text); }
+    .pill.design { background: var(--green-bg); color: var(--green-text); }
+
+    .star-btn {
+      border: 0;
+      background: transparent;
+      cursor: pointer;
+      font-size: 18px;
+      color: #b8c1cc;
+      padding: 2px 6px;
+      border-radius: 8px;
+    }
+
+    .star-btn:hover { background: #eef3f9; }
+    .starred { color: #f5b301; }
+
+    .reader {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: var(--bg);
+    }
+
+    .reader-top {
+      padding: 20px 22px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .reader-title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .reader-title { margin: 0; font-size: 30px; line-height: 1.15; }
+
+    .reader-meta {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .reader-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .ghost-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: #344054;
+      height: 40px;
+      padding: 0 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .ghost-btn:hover { background: #f8fafc; }
+
+    .reader-body-wrap { overflow: auto; padding: 22px; }
+
+    .reader-card {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .reader-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #edf2f7;
+    }
+
+    .person { display: flex; align-items: center; gap: 14px; }
+    .person-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 16px;
+      background: var(--blue);
+      color: white;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+    }
+
+    .person-name { font-weight: 700; }
+    .person-sub { margin-top: 4px; color: var(--muted); font-size: 14px; }
+    .mail-body { margin-top: 24px; white-space: pre-wrap; line-height: 1.8; font-size: 15px; color: #344054; }
+    .attachments { margin-top: 28px; }
+    .attachments h3 { margin: 0 0 12px; font-size: 14px; }
+    .attachment-list { display: flex; flex-wrap: wrap; gap: 10px; }
+    .attachment {
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      padding: 12px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+    }
+
+    .empty {
+      height: 100%;
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      padding: 40px;
+      text-align: center;
+    }
+
+    .calendar-view {
+      display: none;
+      background: var(--bg);
+      min-height: 0;
+      overflow: auto;
+      padding: 22px;
+    }
+
+    .calendar-view.show { display: block; }
+
+    .calendar-layout {
+      max-width: 1380px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 280px 1fr 280px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .calendar-side,
+    .calendar-main,
+    .calendar-agenda {
+      min-width: 0;
+    }
+
+    .calendar-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .calendar-shell { display: grid; gap: 18px; }
+
+    .calendar-topbar {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .calendar-title-wrap h2 { margin: 0; font-size: 28px; }
+    .calendar-title-wrap p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+    .calendar-top-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .mini-calendar {
+      padding: 18px;
+    }
+
+    .mini-cal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      font-weight: 700;
+    }
+
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    .mini-dow,
+    .mini-day {
+      min-height: 30px;
+      display: grid;
+      place-items: center;
+      border-radius: 10px;
+    }
+
+    .mini-dow {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .mini-day.today {
+      background: var(--blue);
+      color: white;
+      font-weight: 700;
+    }
+
+    .mini-day.muted {
+      color: #a0acbd;
+    }
+
+    .mini-day.has-event {
+      background: var(--blue-2);
+      color: var(--blue);
+      font-weight: 700;
+    }
+
+    .calendar-list {
+      padding: 18px;
+      border-top: 1px solid var(--line);
+    }
+
+    .calendar-list h3,
+    .agenda-panel h3 {
+      margin: 0 0 12px;
+      font-size: 14px;
+    }
+
+    .calendar-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      color: #344054;
+      font-size: 14px;
+    }
+
+    .check-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .agenda-panel {
+      padding: 18px;
+    }
+
+    .agenda-day {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .agenda-item {
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: var(--panel-2);
+      cursor: pointer;
+    }
+
+    .agenda-item:hover {
+      background: #fff;
+    }
+
+    .agenda-time {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 700;
+    }
+
+    .agenda-title {
+      font-size: 14px;
+      color: #344054;
+      font-weight: 700;
+    }
+
+    .calendar-grid-wrap {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(140px, 1fr)); }
+
+    .day-head {
+      background: #f8fafc;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      padding: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+    }
+
+    .day-head:last-child { border-right: 0; }
+
+    .day-cell {
+      min-height: 165px;
+      border-right: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      padding: 12px;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .day-cell:nth-child(7n) { border-right: 0; }
+    .day-number { font-size: 14px; font-weight: 700; color: #344054; }
+
+    .day-number.today {
+      width: 32px;
+      height: 32px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--blue);
+      color: white;
+    }
+
+    .event-card {
+      border-radius: 14px;
+      padding: 10px;
+      font-size: 12px;
+      line-height: 1.4;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+
+    .event-card.blue { background: var(--blue-2); color: var(--blue); border-color: var(--blue-3); }
+    .event-card.green { background: var(--green-bg); color: var(--green-text); }
+    .event-card.purple { background: var(--purple-bg); color: var(--purple-text); }
+    .event-time { font-weight: 700; margin-bottom: 4px; }
+
+
+    .calendar-day-view {
+      padding: 10px 0;
+    }
+
+    .day-view-header {
+      padding: 22px 22px 10px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fbfdff 0%, #f8fbff 100%);
+    }
+
+    .day-view-header h3 {
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .day-view-header p {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .day-view-summary {
+      margin-top: 14px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: var(--blue-2);
+      color: var(--blue);
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .day-schedule {
+      padding: 12px 22px 22px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .time-slot {
+      display: grid;
+      grid-template-columns: 84px 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .time-label {
+      padding-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-align: right;
+    }
+
+    .slot-body {
+      min-height: 72px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: #fbfdff;
+      padding: 10px;
+      display: grid;
+      gap: 8px;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+
+    .slot-body:hover {
+      background: #ffffff;
+      border-color: #b7d3f2;
+    }
+
+    .slot-empty {
+      align-self: center;
+      color: #98a2b3;
+      font-size: 13px;
+    }
+
+    .day-event-card {
+      border-radius: 16px;
+      padding: 12px 14px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      display: grid;
+      gap: 4px;
+    }
+
+    .day-event-card.blue { background: var(--blue-2); color: var(--blue); border-color: var(--blue-3); }
+    .day-event-card.green { background: var(--green-bg); color: var(--green-text); }
+    .day-event-card.purple { background: var(--purple-bg); color: var(--purple-text); }
+
+    .day-event-time {
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .day-event-title {
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .day-event-sub {
+      font-size: 12px;
+      opacity: 0.82;
+    }
+
+    .day-view-empty {
+      padding: 34px 22px 28px;
+      color: var(--muted);
+      text-align: center;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.32);
+      backdrop-filter: blur(3px);
+      display: none;
+      z-index: 30;
+    }
+
+    .overlay.show { display: block; }
+
+    .editor-modal,
+    .compose {
+      position: fixed;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 30px 60px rgba(15, 23, 42, 0.25);
+      z-index: 32;
+      display: none;
+      overflow: hidden;
+    }
+
+    .editor-modal {
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(92vw, 520px);
+      border-radius: 24px;
+    }
+
+    .compose {
+      right: 24px;
+      bottom: 24px;
+      width: min(92vw, 680px);
+      border-radius: 28px;
+      z-index: 31;
+    }
+
+    .editor-modal.show,
+    .compose.show { display: block; }
+
+    .editor-head, .editor-foot, .compose-head, .compose-foot {
+      padding: 16px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .compose-head small { display: block; color: var(--muted); margin-top: 4px; }
+    .editor-body, .compose-body { padding: 18px; display: grid; gap: 12px; }
+    .editor-foot, .compose-foot { border-top: 1px solid var(--line); border-bottom: 0; }
+
+    .editor-grid {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .field,
+    .compose textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    .field:focus,
+    .compose textarea:focus { border-color: #98c3ef; }
+    .compose textarea { min-height: 260px; resize: vertical; }
+    .compose-tools { display: flex; gap: 8px; color: var(--muted); }
+
+    .send-btn {
+      border: 0;
+      background: var(--blue);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .send-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+    @media (max-width: 1100px) {
+      .layout { grid-template-columns: 250px 340px 1fr; }
+      .reader-title { font-size: 24px; }
+      .calendar-grid { grid-template-columns: repeat(7, minmax(120px, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      .layout { grid-template-columns: 1fr; }
+      .sidebar {
+        position: fixed;
+        top: 72px;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        z-index: 25;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+        box-shadow: var(--shadow);
+      }
+      .sidebar.show { transform: translateX(0); }
+      .list { border-right: 0; }
+      .reader { display: none; }
+      .menu-btn { display: inline-flex; align-items: center; justify-content: center; }
+      .calendar-view { padding: 14px; }
+      .calendar-layout { grid-template-columns: 1fr; }
+      .calendar-grid-wrap { overflow-x: auto; }
+      .calendar-grid { min-width: 980px; }
+    }
+
+    @media (max-width: 700px) {
+      .topbar { padding: 12px; }
+      .brand-text .sub,
+      .profile span,
+      .desktop-only { display: none; }
+      .search input { height: 40px; }
+      .list-head,
+      .reader-top,
+      .reader-body-wrap,
+      .sidebar,
+      .messages .message-item,
+      .reader-card { padding-left: 14px; padding-right: 14px; }
+      .compose {
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        width: auto;
+      }
+      .editor-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <button class="menu-btn" id="menuBtn" aria-label="Open menu">☰</button>
+        <div class="logo">✉</div>
+        <div class="brand-text">
+          <div class="title">MailDesk</div>
+          <div class="sub">Mock email and calendar client</div>
+        </div>
+      </div>
+
+      <div class="search">
+        <span class="search-icon">⌕</span>
+        <input id="searchInput" type="text" placeholder="Search mail" />
+      </div>
+
+      <div class="top-actions">
+        <button class="icon-btn desktop-only view-btn-active" id="mailViewBtn" title="Mail">✉</button>
+        <button class="icon-btn desktop-only" id="calendarViewBtn" title="Calendar">📅</button>
+        <button class="icon-btn desktop-only" title="Notifications">🔔</button>
+        <button class="icon-btn desktop-only" title="Settings">⚙</button>
+        <div class="profile">
+          <div class="avatar">US</div>
+          <span class="desktop-only" style="color: var(--muted); font-size: 13px;">User</span>
+        </div>
+      </div>
+    </header>
+
+    <div class="layout" id="mailView">
+      <aside class="sidebar" id="sidebar">
+        <button class="compose-btn" id="composeBtn">＋ New message</button>
+        <div class="folder-list" id="folderList"></div>
+        <div class="storage">
+          <div class="storage-title">Storage</div>
+          <div class="storage-sub">8.4 GB of 15 GB used</div>
+          <div class="bar"><span></span></div>
+        </div>
+      </aside>
+
+      <section class="list">
+        <div class="list-head">
+          <div>
+            <h2 class="list-title" id="listTitle">Inbox</h2>
+            <div class="list-sub" id="listSub">0 messages</div>
+          </div>
+          <div class="list-actions">
+            <button class="icon-btn" title="Filter">⛃</button>
+            <button class="icon-btn" title="More">⋯</button>
+          </div>
+        </div>
+        <div class="messages" id="messageList"></div>
+      </section>
+
+      <main class="reader" id="reader"></main>
+    </div>
+
+    <section class="calendar-view" id="calendarView">
+      <div class="calendar-layout">
+        <aside class="calendar-side calendar-panel">
+          <div class="mini-calendar">
+            <div class="mini-cal-head">
+              <span>April 2026</span>
+              <span style="color: var(--muted);">📅</span>
+            </div>
+            <div class="mini-grid" id="miniCalendarGrid"></div>
+          </div>
+          <div class="calendar-list">
+            <h3>My calendars</h3>
+            <div class="calendar-check"><span class="check-dot" style="background:#0f6cbd;"></span> Calendar</div>
+            <div class="calendar-check"><span class="check-dot" style="background:#137333;"></span> Personal</div>
+            <div class="calendar-check"><span class="check-dot" style="background:#6e3cbc;"></span> Projects</div>
+          </div>
+        </aside>
+
+        <div class="calendar-main">
+          <div class="calendar-shell">
+            <div class="calendar-topbar">
+              <div class="calendar-title-wrap">
+                <h2>Today's bookings</h2>
+                <p>Single-day Outlook-style calendar view for Wednesday, April 8</p>
+              </div>
+              <div class="calendar-top-actions">
+                <button class="ghost-btn view-btn-active" type="button">Today</button>
+                <button class="ghost-btn" type="button">Agenda</button>
+                <button class="compose-btn" id="newEventBtn" style="width:auto; margin:0; padding:12px 18px; border-radius:14px; box-shadow:none;">＋ New event</button>
+              </div>
+            </div>
+            <div class="calendar-grid-wrap calendar-panel" style="overflow:hidden;">
+              <div class="calendar-grid" id="calendarGrid"></div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="calendar-agenda calendar-panel">
+          <div class="agenda-panel">
+            <h3>Agenda</h3>
+            <div class="agenda-day">Later this month</div>
+            <div id="agendaList"></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </div>
+
+  <div class="overlay" id="overlay"></div>
+
+  <div class="editor-modal" id="eventEditor">
+    <div class="editor-head">
+      <strong>Edit calendar entry</strong>
+      <button class="icon-btn" id="closeEventEditor" title="Close">✕</button>
+    </div>
+    <div class="editor-body">
+      <div class="editor-grid">
+        <input class="field" id="eventDayField" type="number" min="1" max="31" placeholder="Day" />
+        <input class="field" id="eventTimeField" type="text" placeholder="Time" />
+      </div>
+      <input class="field" id="eventTitleField" type="text" placeholder="Title" />
+      <select class="field" id="eventColorField">
+        <option value="blue">Blue</option>
+        <option value="green">Green</option>
+        <option value="purple">Purple</option>
+      </select>
+    </div>
+    <div class="editor-foot">
+      <button class="ghost-btn" id="deleteEventBtn">Delete</button>
+      <button class="send-btn" id="saveEventBtn">Save</button>
+    </div>
+  </div>
+
+  <div class="compose" id="composeModal">
+    <div class="compose-head">
+      <div>
+        <strong>New message</strong>
+        <small>Mock compose window</small>
+      </div>
+      <button class="icon-btn" id="closeCompose" title="Close">✕</button>
+    </div>
+    <div class="compose-body">
+      <input class="field" id="toField" type="text" placeholder="To" />
+      <input class="field" id="subjectField" type="text" placeholder="Subject" />
+      <textarea id="bodyField" placeholder="Write your message"></textarea>
+    </div>
+    <div class="compose-foot">
+      <div class="compose-tools">
+        <button class="icon-btn" title="Attach">📎</button>
+        <button class="icon-btn" id="clearCompose" title="Clear">🗑</button>
+      </div>
+      <button class="send-btn" id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      currentView: 'mail',
+      selectedFolder: 'Inbox',
+      selectedId: 1,
+      query: '',
+      sidebarOpen: false,
+      composeOpen: false,
+      editingEvent: null,
+      today: { day: 8, month: 'April', year: 2026, weekday: 'Wednesday' },
+      emails: [
+        {
+          id: 1,
+          folder: 'Inbox',
+          sender: 'Ava Carter',
+          email: 'ava.carter@examplemail.com',
+          subject: 'Project timeline update',
+          preview: 'Here is the revised timeline for the month with the latest changes included.',
+          body: `Hi there,
+
+Here is the revised timeline for the month with the latest changes included. Please review the milestones and let me know if anything should be adjusted.
+
+Thanks,
+Ava`,
+          time: '9:14 AM',
+          date: 'Today',
+          unread: true,
+          starred: true,
+          tag: 'important',
+          attachments: ['Timeline-Update.pdf']
+        },
+        {
+          id: 2,
+          folder: 'Inbox',
+          sender: 'Jordan Blake',
+          email: 'jordan.blake@examplemail.com',
+          subject: 'Follow-up summary',
+          preview: 'I added the next steps and notes from the meeting summary.',
+          body: `Hi there,
+
+I added the next steps and notes from the meeting summary. Let me know if you want anything reworded or expanded.
+
+Jordan`,
+          time: '8:02 AM',
+          date: 'Today',
+          unread: true,
+          starred: false,
+          tag: 'work',
+          attachments: []
+        },
+        {
+          id: 3,
+          folder: 'Inbox',
+          sender: 'Daily Brief',
+          email: 'brief@examplemail.com',
+          subject: 'Morning update',
+          preview: 'Top headlines, trends, and updates for today.',
+          body: `Good morning,
+
+Here is your mock daily update with a few example headlines and notes for the day.
+
+1. Market snapshot
+2. Product updates
+3. Weekend reminders
+
+See the full issue for more.`,
+          time: '7:10 AM',
+          date: 'Today',
+          unread: false,
+          starred: false,
+          tag: 'newsletter',
+          attachments: []
+        },
+        {
+          id: 4,
+          folder: 'Sent',
+          sender: 'You',
+          email: 'you@example.com',
+          subject: 'Draft agenda',
+          preview: 'Here is the proposed structure for the session.',
+          body: `Hi team,
+
+Here is the proposed structure for the session:
+
+- Introductions
+- Current state overview
+- Risks and blockers
+- Decisions required
+
+Happy to adjust before we lock it in.`,
+          time: 'Yesterday',
+          date: 'Yesterday',
+          unread: false,
+          starred: false,
+          tag: 'sent',
+          attachments: []
+        },
+        {
+          id: 5,
+          folder: 'Drafts',
+          sender: 'You',
+          email: 'you@example.com',
+          subject: 'Welcome message',
+          preview: 'Still editing this draft before sending.',
+          body: `Hi everyone,
+
+Welcome. This email is a quick introduction and a summary of what to expect over the next two weeks.
+
+More to come shortly.`,
+          time: 'Monday',
+          date: 'Apr 1',
+          unread: false,
+          starred: false,
+          tag: 'draft',
+          attachments: []
+        },
+        {
+          id: 6,
+          folder: 'Archive',
+          sender: 'Design Group',
+          email: 'design@examplemail.com',
+          subject: 'New interface direction',
+          preview: 'We explored three cleaner directions for the dashboard.',
+          body: `Hi there,
+
+We explored three cleaner directions for the dashboard and narrowed it down to one concept with improved spacing, stronger hierarchy, and less visual clutter.
+
+Happy to demo it when you are free.`,
+          time: 'Mar 28',
+          date: 'Mar 28',
+          unread: false,
+          starred: true,
+          tag: 'design',
+          attachments: ['UI-Concepts.pdf', 'Notes.docx']
+        }
+      ],
+      folders: ['Inbox', 'Sent', 'Drafts', 'Archive', 'Trash'],
+      calendarDays: [
+        { day: 30, muted: true, events: [] },
+        { day: 31, muted: true, events: [] },
+        { day: 1, events: [{ id: 101, time: '9:00 AM', title: 'Monthly planning', color: 'blue' }] },
+        { day: 2, events: [{ id: 102, time: '11:30 AM', title: 'Design review', color: 'green' }] },
+        { day: 3, events: [{ id: 103, time: '3:00 PM', title: 'Project review', color: 'purple' }] },
+        { day: 4, events: [] },
+        { day: 5, events: [] },
+        { day: 6, events: [{ id: 104, time: '10:00 AM', title: 'Weekly planning', color: 'blue' }, { id: 105, time: '2:00 PM', title: 'Appointment', color: 'purple' }] },
+        { day: 7, events: [] },
+        { day: 8, events: [{ id: 106, time: '9:00 AM', title: 'Morning stand-up', color: 'blue' }, { id: 117, time: '1:00 PM', title: 'Lunch meeting', color: 'green' }, { id: 118, time: '3:30 PM', title: 'Project follow-up', color: 'purple' }] },
+        { day: 9, events: [] },
+        { day: 10, events: [{ id: 107, time: '4:00 PM', title: 'Budget check', color: 'blue' }] },
+        { day: 11, events: [] },
+        { day: 12, events: [] },
+        { day: 13, events: [{ id: 108, time: '8:30 AM', title: 'Weekly review', color: 'blue' }] },
+        { day: 14, events: [{ id: 109, time: '12:00 PM', title: 'Client call', color: 'green' }] },
+        { day: 15, events: [] },
+        { day: 16, events: [{ id: 110, time: '9:30 AM', title: 'Training session', color: 'purple' }] },
+        { day: 17, events: [] },
+        { day: 18, events: [] },
+        { day: 19, events: [] },
+        { day: 20, events: [{ id: 111, time: '10:15 AM', title: 'Roadmap sync', color: 'blue' }] },
+        { day: 21, events: [] },
+        { day: 22, events: [{ id: 112, time: '2:30 PM', title: 'Check-in', color: 'green' }] },
+        { day: 23, events: [] },
+        { day: 24, events: [{ id: 113, time: '1:00 PM', title: 'Release review', color: 'purple' }] },
+        { day: 25, events: [] },
+        { day: 26, events: [] },
+        { day: 27, events: [{ id: 114, time: '9:00 AM', title: 'Operations check-in', color: 'blue' }] },
+        { day: 28, events: [{ id: 115, time: '11:00 AM', title: 'Design review', color: 'green' }] },
+        { day: 29, events: [] },
+        { day: 30, events: [{ id: 116, time: '3:30 PM', title: 'Finance follow-up', color: 'purple' }] },
+        { day: 1, muted: true, events: [] },
+        { day: 2, muted: true, events: [] },
+        { day: 3, muted: true, events: [] }
+      ]
+    };
+
+    const el = {
+      mailView: document.getElementById('mailView'),
+      calendarView: document.getElementById('calendarView'),
+      mailViewBtn: document.getElementById('mailViewBtn'),
+      calendarViewBtn: document.getElementById('calendarViewBtn'),
+      folderList: document.getElementById('folderList'),
+      messageList: document.getElementById('messageList'),
+      reader: document.getElementById('reader'),
+      listTitle: document.getElementById('listTitle'),
+      listSub: document.getElementById('listSub'),
+      searchInput: document.getElementById('searchInput'),
+      composeBtn: document.getElementById('composeBtn'),
+      composeModal: document.getElementById('composeModal'),
+      overlay: document.getElementById('overlay'),
+      closeCompose: document.getElementById('closeCompose'),
+      toField: document.getElementById('toField'),
+      subjectField: document.getElementById('subjectField'),
+      bodyField: document.getElementById('bodyField'),
+      sendBtn: document.getElementById('sendBtn'),
+      clearCompose: document.getElementById('clearCompose'),
+      sidebar: document.getElementById('sidebar'),
+      menuBtn: document.getElementById('menuBtn'),
+      calendarGrid: document.getElementById('calendarGrid'),
+      miniCalendarGrid: document.getElementById('miniCalendarGrid'),
+      agendaList: document.getElementById('agendaList'),
+      newEventBtn: document.getElementById('newEventBtn'),
+      eventEditor: document.getElementById('eventEditor'),
+      closeEventEditor: document.getElementById('closeEventEditor'),
+      eventDayField: document.getElementById('eventDayField'),
+      eventTimeField: document.getElementById('eventTimeField'),
+      eventTitleField: document.getElementById('eventTitleField'),
+      eventColorField: document.getElementById('eventColorField'),
+      saveEventBtn: document.getElementById('saveEventBtn'),
+      deleteEventBtn: document.getElementById('deleteEventBtn')
+    };
+
+    function initials(name) {
+      return name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getUnreadCount(folder) {
+      return state.emails.filter(email => email.folder === folder && email.unread).length;
+    }
+
+    function getFilteredEmails() {
+      const q = state.query.trim().toLowerCase();
+      return state.emails.filter(email => {
+        const inFolder = email.folder === state.selectedFolder;
+        const haystack = `${email.sender} ${email.subject} ${email.preview} ${email.body}`.toLowerCase();
+        return inFolder && haystack.includes(q);
+      });
+    }
+
+    function getSelectedEmail() {
+      const filtered = getFilteredEmails();
+      return filtered.find(email => email.id === state.selectedId) || filtered[0] || null;
+    }
+
+    function renderFolders() {
+      el.folderList.innerHTML = state.folders.map(folder => {
+        const active = folder === state.selectedFolder ? 'active' : '';
+        const count = getUnreadCount(folder) || state.emails.filter(e => e.folder === folder).length;
+        const icon = { Inbox: '📥', Sent: '📤', Drafts: '📝', Archive: '🗂', Trash: '🗑' }[folder] || '•';
+        return `
+          <button class="folder-item ${active}" data-folder="${folder}">
+            <span class="folder-left"><span>${icon}</span><span>${folder}</span></span>
+            <span class="badge-count">${count}</span>
+          </button>
+        `;
+      }).join('');
+
+      el.folderList.querySelectorAll('.folder-item').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.selectedFolder = btn.dataset.folder;
+          const first = state.emails.find(email => email.folder === state.selectedFolder);
+          state.selectedId = first ? first.id : null;
+          state.sidebarOpen = false;
+          render();
+        });
+      });
+    }
+
+    function renderMessages() {
+      const filtered = getFilteredEmails();
+      el.listTitle.textContent = state.selectedFolder;
+      el.listSub.textContent = `${filtered.length} message${filtered.length === 1 ? '' : 's'}`;
+
+      if (!filtered.length) {
+        el.messageList.innerHTML = '<div class="empty">No messages found.</div>';
+        return;
+      }
+
+      const selected = getSelectedEmail();
+      el.messageList.innerHTML = filtered.map(email => `
+        <button class="message-item ${selected && selected.id === email.id ? 'active' : ''}" data-id="${email.id}">
+          <div class="row">
+            <div class="sender">
+              ${email.unread ? '<span class="dot"></span>' : ''}
+              <span class="sender-name ${email.unread ? 'unread' : 'read'}">${escapeHtml(email.sender)}</span>
+            </div>
+            <span class="time">${escapeHtml(email.time)}</span>
+          </div>
+          <div class="subject ${email.unread ? 'unread' : 'read'}">${escapeHtml(email.subject)}</div>
+          <div class="preview">${escapeHtml(email.preview)}</div>
+          <div class="message-foot">
+            <span class="pill ${email.tag}">${escapeHtml(email.tag.charAt(0).toUpperCase() + email.tag.slice(1))}</span>
+            <button class="star-btn ${email.starred ? 'starred' : ''}" data-star="${email.id}" type="button">★</button>
+          </div>
+        </button>
+      `).join('');
+
+      el.messageList.querySelectorAll('.message-item').forEach(btn => {
+        btn.addEventListener('click', event => {
+          if (event.target.matches('[data-star]')) return;
+          const id = Number(btn.dataset.id);
+          state.selectedId = id;
+          const email = state.emails.find(e => e.id === id);
+          if (email) email.unread = false;
+          render();
+        });
+      });
+
+      el.messageList.querySelectorAll('[data-star]').forEach(btn => {
+        btn.addEventListener('click', event => {
+          event.stopPropagation();
+          const id = Number(btn.dataset.star);
+          const email = state.emails.find(e => e.id === id);
+          if (email) email.starred = !email.starred;
+          render();
+        });
+      });
+    }
+
+    function renderReader() {
+      const email = getSelectedEmail();
+      if (!email) {
+        el.reader.innerHTML = '<div class="empty">Select a message to read it.</div>';
+        return;
+      }
+
+      el.reader.innerHTML = `
+        <div class="reader-top">
+          <div class="reader-title-row">
+            <div>
+              <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <h1 class="reader-title">${escapeHtml(email.subject)}</h1>
+                <span class="pill ${email.tag}">${escapeHtml(email.tag.charAt(0).toUpperCase() + email.tag.slice(1))}</span>
+              </div>
+              <div class="reader-meta">
+                <span><strong style="color:#344054;">${escapeHtml(email.sender)}</strong></span>
+                <span>&lt;${escapeHtml(email.email)}&gt;</span>
+                <span>🕒 ${escapeHtml(email.date)}</span>
+              </div>
+            </div>
+            <div class="reader-actions">
+              <button class="ghost-btn">↩ Reply</button>
+              <button class="ghost-btn">⇄ Reply all</button>
+              <button class="ghost-btn">↪ Forward</button>
+            </div>
+          </div>
+        </div>
+        <div class="reader-body-wrap">
+          <div class="reader-card">
+            <div class="reader-card-top">
+              <div class="person">
+                <div class="person-avatar">${initials(email.sender)}</div>
+                <div>
+                  <div class="person-name">${escapeHtml(email.sender)}</div>
+                  <div class="person-sub">to you</div>
+                </div>
+              </div>
+              <button class="star-btn ${email.starred ? 'starred' : ''}" id="readerStarBtn" type="button">★</button>
+            </div>
+            <div class="mail-body">${escapeHtml(email.body)}</div>
+            ${email.attachments && email.attachments.length ? `
+              <div class="attachments">
+                <h3>📎 Attachments</h3>
+                <div class="attachment-list">
+                  ${email.attachments.map(file => `<div class="attachment">${escapeHtml(file)}</div>`).join('')}
+                </div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+
+      const readerStarBtn = document.getElementById('readerStarBtn');
+      if (readerStarBtn) {
+        readerStarBtn.addEventListener('click', () => {
+          email.starred = !email.starred;
+          render();
+        });
+      }
+    }
+
+    function renderCalendar() {
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const todayDay = state.today.day;
+      const todayInfo = state.calendarDays.find(item => !item.muted && item.day === todayDay) || { day: todayDay, events: [] };
+      const todayEvents = [...(todayInfo.events || [])].sort((a, b) => toMinutes(a.time) - toMinutes(b.time));
+      const timeSlots = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM', '6:00 PM'];
+
+      const miniDow = days.map(day => `<div class="mini-dow">${day.charAt(0)}</div>`).join('');
+      const miniDays = state.calendarDays.map(item => {
+        const cls = [
+          'mini-day',
+          item.muted ? 'muted' : '',
+          !item.muted && item.day === todayDay ? 'today' : '',
+          item.events && item.events.length ? 'has-event' : ''
+        ].filter(Boolean).join(' ');
+        return `<div class="${cls}">${item.day}</div>`;
+      }).join('');
+      el.miniCalendarGrid.innerHTML = miniDow + miniDays;
+
+      const scheduleRows = timeSlots.map(slot => {
+        const slotStart = toMinutes(slot);
+        const slotEvents = todayEvents.filter(event => {
+          const eventStart = toMinutes(event.time);
+          return eventStart >= slotStart && eventStart < slotStart + 60;
+        });
+
+        return `
+          <div class="time-slot">
+            <div class="time-label">${slot}</div>
+            <div class="slot-body" data-slot-time="${slot}">
+              ${slotEvents.length ? slotEvents.map(event => `
+                <div class="day-event-card ${event.color}" data-event-id="${event.id}">
+                  <div class="day-event-time">${escapeHtml(event.time)}</div>
+                  <div class="day-event-title">${escapeHtml(event.title)}</div>
+                  <div class="day-event-sub">${state.today.weekday}, ${state.today.month} ${todayDay}</div>
+                </div>
+              `).join('') : '<div class="slot-empty">No booking</div>'}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      el.calendarGrid.innerHTML = `
+        <div class="calendar-day-view">
+          <div class="day-view-header">
+            <h3>${state.today.weekday}, ${state.today.month} ${todayDay}</h3>
+            <p>Your calendar is focused on today's bookings.</p>
+            <div class="day-view-summary">${todayEvents.length} booking${todayEvents.length === 1 ? '' : 's'} today</div>
+          </div>
+          ${todayEvents.length ? `<div class="day-schedule">${scheduleRows}</div>` : `<div class="day-view-empty">No bookings for today. Use “New event” to add one.</div>`}
+        </div>
+      `;
+
+      const agendaItems = state.calendarDays
+        .filter(item => !item.muted && item.day !== todayDay && item.events && item.events.length)
+        .flatMap(item => item.events.map(event => ({ ...event, day: item.day })))
+        .sort((a, b) => a.day === b.day ? toMinutes(a.time) - toMinutes(b.time) : a.day - b.day)
+        .slice(0, 8);
+
+      el.agendaList.innerHTML = agendaItems.map(event => `
+        <div class="agenda-item" data-event-id="${event.id}">
+          <div class="agenda-time">Apr ${event.day} • ${escapeHtml(event.time)}</div>
+          <div class="agenda-title">${escapeHtml(event.title)}</div>
+        </div>
+      `).join('') || '<div style="color: var(--muted); font-size: 14px;">No later bookings</div>';
+
+      el.calendarGrid.querySelectorAll('[data-event-id]').forEach(card => {
+        card.addEventListener('click', () => openEventEditor(Number(card.dataset.eventId)));
+      });
+
+      el.agendaList.querySelectorAll('[data-event-id]').forEach(card => {
+        card.addEventListener('click', () => openEventEditor(Number(card.dataset.eventId)));
+      });
+
+      el.calendarGrid.querySelectorAll('[data-slot-time]').forEach(slot => {
+        slot.addEventListener('dblclick', event => {
+          if (event.target.closest('[data-event-id]')) return;
+          openEventEditor(null, null, slot.dataset.slotTime);
+        });
+      });
+    }
+
+    function toMinutes(timeStr) {
+      const match = String(timeStr).trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+      if (!match) return 0;
+      let hours = Number(match[1]) % 12;
+      const minutes = Number(match[2]);
+      const meridiem = match[3].toUpperCase();
+      if (meridiem === 'PM') hours += 12;
+      return hours * 60 + minutes;
+    }
+
+    function findEventById(eventId) {
+      for (let i = 0; i < state.calendarDays.length; i += 1) {
+        const eventIndex = state.calendarDays[i].events.findIndex(event => event.id === eventId);
+        if (eventIndex !== -1) return { cellIndex: i, eventIndex, event: state.calendarDays[i].events[eventIndex] };
+      }
+      return null;
+    }
+
+    function openEventEditor(eventId, cellIndexForNew, suggestedTime) {
+      const found = eventId ? findEventById(eventId) : null;
+      state.editingEvent = found ? { eventId } : { eventId: null, cellIndexForNew, suggestedTime };
+
+      if (found) {
+        el.eventDayField.value = state.calendarDays[found.cellIndex].day;
+        el.eventTimeField.value = found.event.time;
+        el.eventTitleField.value = found.event.title;
+        el.eventColorField.value = found.event.color;
+        el.deleteEventBtn.style.display = 'inline-flex';
+      } else {
+        const suggestedDay = typeof cellIndexForNew === 'number'
+          ? state.calendarDays[cellIndexForNew].day
+          : state.today.day;
+        el.eventDayField.value = suggestedDay;
+        el.eventTimeField.value = suggestedTime || '';
+        el.eventTitleField.value = '';
+        el.eventColorField.value = 'blue';
+        el.deleteEventBtn.style.display = 'none';
+      }
+
+      el.eventEditor.classList.add('show');
+      el.overlay.classList.add('show');
+    }
+
+    function closeEventEditor() {
+      state.editingEvent = null;
+      el.eventEditor.classList.remove('show');
+      if (!state.composeOpen && !(state.sidebarOpen && state.currentView === 'mail')) {
+        el.overlay.classList.remove('show');
+      }
+    }
+
+    function saveEvent() {
+      const day = Number(el.eventDayField.value);
+      const time = el.eventTimeField.value.trim();
+      const title = el.eventTitleField.value.trim();
+      const color = el.eventColorField.value;
+      if (!day || !time || !title) return;
+
+      const targetCellIndex = state.calendarDays.findIndex(item => !item.muted && item.day === day);
+      if (targetCellIndex === -1) return;
+
+      if (state.editingEvent && state.editingEvent.eventId) {
+        const found = findEventById(state.editingEvent.eventId);
+        if (!found) return;
+        const existing = found.event;
+        state.calendarDays[found.cellIndex].events.splice(found.eventIndex, 1);
+        state.calendarDays[targetCellIndex].events.push({ ...existing, time, title, color });
+      } else {
+        state.calendarDays[targetCellIndex].events.push({ id: Date.now(), time, title, color });
+      }
+
+      closeEventEditor();
+      render();
+    }
+
+    function deleteEvent() {
+      if (!state.editingEvent || !state.editingEvent.eventId) return;
+      const found = findEventById(state.editingEvent.eventId);
+      if (!found) return;
+      state.calendarDays[found.cellIndex].events.splice(found.eventIndex, 1);
+      closeEventEditor();
+      render();
+    }
+
+    function setView(view) {
+      state.currentView = view;
+      const isMail = view === 'mail';
+      el.mailView.classList.toggle('hidden', !isMail);
+      el.calendarView.classList.toggle('show', !isMail);
+      el.mailViewBtn.classList.toggle('view-btn-active', isMail);
+      el.calendarViewBtn.classList.toggle('view-btn-active', !isMail);
+      state.sidebarOpen = false;
+      el.sidebar.classList.remove('show');
+      el.overlay.classList.remove('show');
+    }
+
+    function updateComposeButton() {
+      el.sendBtn.disabled = !el.toField.value.trim() || !el.subjectField.value.trim();
+    }
+
+    function openCompose() {
+      state.composeOpen = true;
+      el.composeModal.classList.add('show');
+      el.overlay.classList.add('show');
+    }
+
+    function closeCompose() {
+      state.composeOpen = false;
+      el.composeModal.classList.remove('show');
+      if (!state.editingEvent && !(state.sidebarOpen && state.currentView === 'mail')) {
+        el.overlay.classList.remove('show');
+      }
+    }
+
+    function clearComposeFields() {
+      el.toField.value = '';
+      el.subjectField.value = '';
+      el.bodyField.value = '';
+      updateComposeButton();
+    }
+
+    function sendMail() {
+      if (el.sendBtn.disabled) return;
+      const newEmail = {
+        id: Date.now(),
+        folder: 'Sent',
+        sender: 'You',
+        email: 'you@example.com',
+        subject: el.subjectField.value.trim(),
+        preview: (el.bodyField.value.trim() || 'No preview available').slice(0, 90),
+        body: el.bodyField.value.trim(),
+        time: 'Just now',
+        date: 'Today',
+        unread: false,
+        starred: false,
+        tag: 'sent',
+        attachments: []
+      };
+
+      state.emails.unshift(newEmail);
+      state.selectedFolder = 'Sent';
+      state.selectedId = newEmail.id;
+      clearComposeFields();
+      closeCompose();
+      render();
+    }
+
+    function toggleSidebar() {
+      state.sidebarOpen = !state.sidebarOpen;
+      el.sidebar.classList.toggle('show', state.sidebarOpen);
+      el.overlay.classList.toggle('show', (state.sidebarOpen && state.currentView === 'mail') || state.composeOpen || !!state.editingEvent);
+    }
+
+    function render() {
+      renderFolders();
+      renderMessages();
+      renderReader();
+      renderCalendar();
+      setView(state.currentView);
+      el.sidebar.classList.toggle('show', state.sidebarOpen && state.currentView === 'mail');
+      el.overlay.classList.toggle('show', (state.sidebarOpen && state.currentView === 'mail') || state.composeOpen || !!state.editingEvent);
+    }
+
+    el.searchInput.addEventListener('input', e => {
+      state.query = e.target.value;
+      render();
+    });
+
+    el.composeBtn.addEventListener('click', openCompose);
+    el.closeCompose.addEventListener('click', closeCompose);
+    el.menuBtn.addEventListener('click', toggleSidebar);
+    el.clearCompose.addEventListener('click', clearComposeFields);
+    el.sendBtn.addEventListener('click', sendMail);
+    el.toField.addEventListener('input', updateComposeButton);
+    el.subjectField.addEventListener('input', updateComposeButton);
+    el.mailViewBtn.addEventListener('click', () => { setView('mail'); render(); });
+    el.calendarViewBtn.addEventListener('click', () => { setView('calendar'); render(); });
+    el.newEventBtn.addEventListener('click', () => openEventEditor(null, null, '9:00 AM'));
+    el.closeEventEditor.addEventListener('click', closeEventEditor);
+    el.saveEventBtn.addEventListener('click', saveEvent);
+    el.deleteEventBtn.addEventListener('click', deleteEvent);
+    el.overlay.addEventListener('click', () => {
+      state.sidebarOpen = false;
+      closeCompose();
+      closeEventEditor();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
